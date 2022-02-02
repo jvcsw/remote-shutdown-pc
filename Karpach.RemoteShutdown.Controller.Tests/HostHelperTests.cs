@@ -12,13 +12,13 @@ namespace Karpach.RemoteShutdown.Controller.Tests
     public class HostHelperTests
     {
         private AutoMocker _mocker;
-        private HostHelper _hostHelper;
+        private HostService _hostHelper;
 
         [SetUp]
         public void Init()
         {
             _mocker = new AutoMocker();
-            _hostHelper = _mocker.CreateInstance<HostHelper>();
+            _hostHelper = _mocker.CreateInstance<HostService>();
             _hostHelper.DefaultCommand = TrayCommandType.Suspend;
         }
 

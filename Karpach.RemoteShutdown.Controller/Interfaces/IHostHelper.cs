@@ -4,9 +4,12 @@ namespace Karpach.RemoteShutdown.Controller.Interfaces
 {
     public interface IHostHelper
     {
-        Task CreateHostAsync(int port);
-        void Cancel();
+        Task Start(int port);
+        
+        Task Stop();
+
         string SecretCode { get; set; }
+        
         TrayCommandType DefaultCommand { get; set; }
     }
 }
