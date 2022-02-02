@@ -74,9 +74,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ControllerApplicationContext.cs" />
-    <Compile Include="Helpers\HostService.cs" />
-    <Compile Include="Interfaces\IHostHelper.cs" />
-    <Compile Include="Interfaces\ITrayCommandHelper.cs" />
+    <Compile Include="Services\HostService.cs" />
+    <Compile Include="Services\IHostService.cs" />
+    <Compile Include="Helpers\ITrayCommandHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
@@ -146,5 +146,6 @@
       <Version>1.1.3</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
-
-namespace Karpach.RemoteShutdown.Controller.Interfaces
+﻿namespace Karpach.RemoteShutdown.Controller.Services
 {
-    public interface IHostHelper
+    using System.Threading.Tasks;
+
+    public interface IHostService
     {
         Task Start(int port);
         

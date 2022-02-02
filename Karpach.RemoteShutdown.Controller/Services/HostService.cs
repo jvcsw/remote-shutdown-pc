@@ -1,50 +1,51 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Karpach.RemoteShutdown.Controller.Interfaces;
-using log4net;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-
-namespace Karpach.RemoteShutdown.Controller.Helpers
+﻿namespace Karpach.RemoteShutdown.Controller.Services
 {
-    public class HostService : IHostHelper
-    {
-        private readonly ITrayCommandHelper _trayCommandHelper;
-        private readonly ILog _logger;
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Karpach.RemoteShutdown.Controller.Helpers;
+    using log4net;
+    using Microsoft.AspNetCore.Builder;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.AspNetCore.Http;
 
-        private CancellationTokenSource _cancellationTokenSource;
-        private Task _hostTask;
+    public class HostService : IHostService
+    {
+        private readonly ITrayCommandHelper trayCommandHelper;
+        private readonly ILog logger;
+
+        private CancellationTokenSource cancellationTokenSource;
+        private Task hostTask;
 
         public string SecretCode { get; set; }
+
         public TrayCommandType DefaultCommand { get; set; }
 
         public HostService(ITrayCommandHelper trayCommandHelper, ILog logger)
         {
-            _trayCommandHelper = trayCommandHelper;
-            _logger = logger;
+            this.trayCommandHelper = trayCommandHelper;
+            this.logger = logger;
 
-            _cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource = new CancellationTokenSource();
         }
 
         public async Task Start(int port)
         {
             await this.Stop();
 
-            _cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource = new CancellationTokenSource();
 
-            _hostTask = Task.Run(() => this.CreateHost(port), _cancellationTokenSource.Token);
+            hostTask = Task.Run(() => this.CreateHost(port), cancellationTokenSource.Token);
         }
 
         public async Task Stop()
         {
-            if (_hostTask != null)
+            if (hostTask != null)
             {
-                _logger.Info("Stopping http service...");
+                logger.Info("Stopping http service...");
 
-                _cancellationTokenSource.Cancel();
-                await _hostTask.ConfigureAwait(false);
+                cancellationTokenSource.Cancel();
+                await hostTask.ConfigureAwait(false);
             }
         }
 
@@ -63,23 +64,23 @@ namespace Karpach.RemoteShutdown.Controller.Helpers
                 {
                     commandName = url.Substring(lastSlashPosition + 1);
                 }
-                TrayCommandType? commandType = _trayCommandHelper.GetCommandType(commandName);
+                TrayCommandType? commandType = trayCommandHelper.GetCommandType(commandName);
                 if (!string.IsNullOrEmpty(commandName) && commandType == null)
                 {
                     return;
                 }
                 commandType = commandType ?? DefaultCommand;
-                _trayCommandHelper.RunCommand(commandType.Value);
+                trayCommandHelper.RunCommand(commandType.Value);
             }
             catch (Exception e)
             {
-                _logger.Error("Error processing http request.", e);
+                logger.Error("Error processing http request.", e);
             }
         }
 
         private void CreateHost(int port)
         {
-            _logger.Info("Starting http service...");
+            logger.Info("Starting http service...");
 
             try
             {
@@ -97,11 +98,11 @@ namespace Karpach.RemoteShutdown.Controller.Helpers
                             });
                         })
                         .Build();
-                host.Run(_cancellationTokenSource.Token);
+                host.Run(cancellationTokenSource.Token);
             }
             catch (Exception e)
             {
-                _logger.Error("Error starting http service.", e);
+                logger.Error("Error starting http service.", e);
             }
         }
     }

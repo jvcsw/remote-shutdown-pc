@@ -1,15 +1,14 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using Karpach.RemoteShutdown.Controller.Interfaces;
-
-namespace Karpach.RemoteShutdown.Controller.Helpers
+﻿namespace Karpach.RemoteShutdown.Controller.Helpers
 {
+    using System;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Windows.Forms;
+
     public class TrayCommandHelper : ITrayCommandHelper
     {
-        private TrayCommand[] _commands;
+        private TrayCommand[] commands;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessage(
@@ -19,7 +18,7 @@ namespace Karpach.RemoteShutdown.Controller.Helpers
             IntPtr lParam
         );
 
-        public TrayCommand[] Commands => _commands ?? (_commands = new[]
+        public TrayCommand[] Commands => commands ?? (commands = new[]
         {
             new TrayCommand {CommandType = TrayCommandType.Hibernate, Name = "Hibernate"},
             new TrayCommand {CommandType = TrayCommandType.TurnScreenOff, Name = "Turn screen off"},

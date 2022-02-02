@@ -1,36 +1,38 @@
-﻿using System;
-using System.Windows.Forms;
-using Karpach.RemoteShutdown.Controller.Interfaces;
-using Karpach.RemoteShutdown.Controller.Properties;
-using log4net;
-using Microsoft.Win32;
-
-namespace Karpach.RemoteShutdown.Controller
+﻿namespace Karpach.RemoteShutdown.Controller
 {
+    using System;
+    using System.Windows.Forms;
+    using Karpach.RemoteShutdown.Controller.Helpers;
+    using Karpach.RemoteShutdown.Controller.Properties;
+    using Karpach.RemoteShutdown.Controller.Services;
+    using log4net;
+    using Microsoft.Win32;
+
     public class ControllerApplicationContext: ApplicationContext
     {
-        private readonly ITrayCommandHelper _trayCommandHelper;
-        private readonly ILog _logger;
-        private readonly SettingsForm _settingsForm;
-        private readonly IHostHelper _hostHelper;
-        private readonly NotifyIcon _trayIcon;        
-        private readonly ToolStripMenuItem _commandButton;
+        private readonly ITrayCommandHelper trayCommandHelper;
+        private readonly ILog logger;
+        private readonly SettingsForm settingsForm;
+        private readonly IHostService hostService;
+        private readonly NotifyIcon trayIcon;        
+        private readonly ToolStripMenuItem commandButton;
 
-        public ControllerApplicationContext(ITrayCommandHelper trayCommandHelper, SettingsForm settingsForm, IHostHelper hostHelper, ILog logger)
+        public ControllerApplicationContext(ITrayCommandHelper trayCommandHelper, SettingsForm settingsForm, IHostService hostHelper, ILog logger)
         {
-            _trayCommandHelper = trayCommandHelper;
-            _settingsForm = settingsForm;
-            _hostHelper = hostHelper;
-            _logger = logger;
+            this.trayCommandHelper = trayCommandHelper;
+            this.settingsForm = settingsForm;
+            this.hostService = hostHelper;
+            this.logger = logger;
 
             var notifyContextMenu = new ContextMenuStrip();
 
-            _commandButton = new ToolStripMenuItem(_trayCommandHelper.GetText((TrayCommandType)Settings.Default.DefaultCommand))
+            this.commandButton = new ToolStripMenuItem(this.trayCommandHelper.GetText((TrayCommandType)Settings.Default.DefaultCommand))
             {
                 Image = Resources.Shutdown.ToBitmap()
             };
-            _commandButton.Click += ShutDownClick;
-            notifyContextMenu.Items.Add(_commandButton);
+
+            this.commandButton.Click += ShutDownClick;
+            notifyContextMenu.Items.Add(this.commandButton);
 
             notifyContextMenu.Items.Add("-");
 
@@ -52,48 +54,51 @@ namespace Karpach.RemoteShutdown.Controller
 
 
             // Initialize Tray Icon            
-            _trayIcon = new NotifyIcon
+            this.trayIcon = new NotifyIcon
             {
                 Icon = Resources.AppIcon,
                 ContextMenuStrip = notifyContextMenu,
                 Visible = true
             };
 
-            _hostHelper.SecretCode = Settings.Default.SecretCode;
-            _hostHelper.DefaultCommand = (TrayCommandType)Settings.Default.DefaultCommand;
-            _hostHelper.Start(Settings.Default.RemotePort);
+            this.hostService.SecretCode = Settings.Default.SecretCode;
+            this.hostService.DefaultCommand = (TrayCommandType)Settings.Default.DefaultCommand;
+            this.hostService.Start(Settings.Default.RemotePort);
         }
 
         private void SettingsClick(object sender, EventArgs e)
         {
-            _logger.Info("Openning settings form...");
+            this.logger.Info("Openning settings form...");
 
-            if (_settingsForm.ShowDialog() == DialogResult.OK)
+            if (settingsForm.ShowDialog() == DialogResult.OK)
             {
-                _logger.Info("Applying settings...");
+                this.logger.Info("Applying settings...");
 
-                if (Settings.Default.RemotePort != _settingsForm.Port)
+                if (Settings.Default.RemotePort != this.settingsForm.Port)
                 {
-                    _hostHelper.Start(_settingsForm.Port);
+                    this.hostService.Start(settingsForm.Port);
                 }
-                if (Settings.Default.AutoStart != _settingsForm.AutoStart)
+                
+                if (Settings.Default.AutoStart != this.settingsForm.AutoStart)
                 {
-                    SetAutoStart(_settingsForm.AutoStart);
+                    this.SetAutoStart(settingsForm.AutoStart);
                 }
-                _commandButton.Text = _trayCommandHelper.GetText(_settingsForm.CommandType);
-                Settings.Default.AutoStart = _settingsForm.AutoStart;
-                Settings.Default.DefaultCommand = (int)_settingsForm.CommandType;
-                Settings.Default.RemotePort = _settingsForm.Port;
-                Settings.Default.SecretCode = _settingsForm.SecretCode;                
+
+                this.commandButton.Text = this.trayCommandHelper.GetText(this.settingsForm.CommandType);
+                Settings.Default.AutoStart = this.settingsForm.AutoStart;
+                Settings.Default.DefaultCommand = (int)this.settingsForm.CommandType;
+                Settings.Default.RemotePort = this.settingsForm.Port;
+                Settings.Default.SecretCode = this.settingsForm.SecretCode;                
                 Settings.Default.Save();
-                // Update host helper
-                _hostHelper.SecretCode = Settings.Default.SecretCode;
-                _hostHelper.DefaultCommand = (TrayCommandType)Settings.Default.DefaultCommand;
 
-                _logger.Info("Settings applied.");
+                // Update host helper
+                this.hostService.SecretCode = Settings.Default.SecretCode;
+                this.hostService.DefaultCommand = (TrayCommandType)Settings.Default.DefaultCommand;
+
+                this.logger.Info("Settings applied.");
             }
 
-            _logger.Info("Settings form closed.");
+            this.logger.Info("Settings form closed.");
         }
 
         private void SetAutoStart(bool autoStart)
@@ -104,30 +109,30 @@ namespace Karpach.RemoteShutdown.Controller
                 // Add the value in the registry so that the application runs at startup
                 rkApp?.SetValue("Karpach.RemoteShutdown", Application.ExecutablePath);
 
-                _logger.Info("Autostart enabled.");
+                this.logger.Info("Autostart enabled.");
             }
             else
             {
                 rkApp?.DeleteValue("Karpach.RemoteShutdown", false);
 
-                _logger.Info("Autostart disabled.");
+                this.logger.Info("Autostart disabled.");
             }
         }
 
         private void ShutDownClick(object sender, EventArgs e)
         {
-            _logger.Info("Executing shutdown command...");
+            this.logger.Info("Executing shutdown command...");
 
-            _trayCommandHelper.RunCommand((TrayCommandType)Settings.Default.DefaultCommand);
+            this.trayCommandHelper.RunCommand((TrayCommandType)Settings.Default.DefaultCommand);
         }
 
         void Exit(object sender, EventArgs e)
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
-            _trayIcon.Visible = false;            
-            _hostHelper.Stop();
+            this.trayIcon.Visible = false;
+            this.hostService.Stop();
 
-            _logger.Info("Exiting application...");
+            this.logger.Info("Exiting application...");
 
             Application.Exit();
         }        

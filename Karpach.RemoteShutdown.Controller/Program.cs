@@ -1,14 +1,14 @@
-﻿using System;
-using System.Windows.Forms;
-using Autofac;
-using Karpach.RemoteShutdown.Controller.Helpers;
-using Karpach.RemoteShutdown.Controller.Interfaces;
-using log4net;
-
-[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
+﻿[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
 
 namespace Karpach.RemoteShutdown.Controller
 {
+    using System;
+    using System.Windows.Forms;
+    using Autofac;
+    using Karpach.RemoteShutdown.Controller.Helpers;
+    using Karpach.RemoteShutdown.Controller.Services;
+    using log4net;
+
     static class Program
     {
         public static IContainer Container { get; set; }
@@ -29,7 +29,7 @@ namespace Karpach.RemoteShutdown.Controller
             builder.RegisterType<TrayCommandHelper>().As<ITrayCommandHelper>().SingleInstance();
             builder.RegisterType<ControllerApplicationContext>().AsSelf();
             builder.RegisterType<SettingsForm>().AsSelf();
-            builder.RegisterType<HostService>().As<IHostHelper>();
+            builder.RegisterType<HostService>().As<IHostService>();
             Container = builder.Build();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
