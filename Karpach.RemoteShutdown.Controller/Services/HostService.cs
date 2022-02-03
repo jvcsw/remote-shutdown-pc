@@ -58,6 +58,8 @@
         {
             try
             {
+                this.logger.Info($"Processing '{url}' request...");
+
                 if (!this.ExistBlockingProcessRunning())
                 {
                     await Task.Delay(1000).ConfigureAwait(false);
@@ -151,7 +153,7 @@
                 return false;
             }
 
-            if (processes.Any(o => o.ProcessName.EndsWith(process)))
+            if (processes.Any(o => o.ProcessName.ToLower().Contains(process.ToLower())))
             {
                 this.logger.Info($"Detected process running: '{process}'");
                 return true;
