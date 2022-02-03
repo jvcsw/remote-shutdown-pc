@@ -62,6 +62,7 @@
             };
 
             this.hostService.SecretCode = Settings.Default.SecretCode;
+            this.hostService.BlockingProcesses = Settings.Default.BlockingProcesses.Split(';');
             this.hostService.DefaultCommand = (TrayCommandType)Settings.Default.DefaultCommand;
             this.hostService.Start(Settings.Default.RemotePort);
         }

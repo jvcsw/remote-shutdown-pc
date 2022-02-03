@@ -70,5 +70,17 @@ namespace Karpach.RemoteShutdown.Controller.Properties {
                 this["DefaultCommand"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BlockingProcesses {
+            get {
+                return ((string)(this["BlockingProcesses"]));
+            }
+            set {
+                this["BlockingProcesses"] = value;
+            }
+        }
     }
 }

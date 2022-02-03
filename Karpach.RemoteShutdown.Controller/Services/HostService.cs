@@ -1,6 +1,9 @@
 ﻿namespace Karpach.RemoteShutdown.Controller.Services
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Karpach.RemoteShutdown.Controller.Helpers;
@@ -18,6 +21,8 @@
         private Task hostTask;
 
         public string SecretCode { get; set; }
+
+        public IList<string> BlockingProcesses { get; set; }
 
         public TrayCommandType DefaultCommand { get; set; }
 
@@ -53,24 +58,35 @@
         {
             try
             {
-                await Task.Delay(1000).ConfigureAwait(false);
-                if (!string.IsNullOrEmpty(SecretCode) && !url.StartsWith($"/{SecretCode}/"))
+                if (!this.ExistBlockingProcessRunning())
                 {
-                    return;
+                    await Task.Delay(1000).ConfigureAwait(false);
+                    if (!string.IsNullOrEmpty(SecretCode) && !url.StartsWith($"/{SecretCode}/"))
+                    {
+                        return;
+                    }
+                    int lastSlashPosition = url.LastIndexOf("/", StringComparison.Ordinal);
+                    string commandName = String.Empty;
+                    if (lastSlashPosition >= 0 && url.Length > 1)
+                    {
+                        commandName = url.Substring(lastSlashPosition + 1);
+                    }
+                    TrayCommandType? commandType = trayCommandHelper.GetCommandType(commandName);
+                    if (!string.IsNullOrEmpty(commandName) && commandType == null)
+                    {
+                        return;
+                    }
+
+                    commandType = commandType ?? DefaultCommand;
+
+                    this.logger.Info($"Executing '{commandType}' operation...");
+
+                    trayCommandHelper.RunCommand(commandType.Value);
                 }
-                int lastSlashPosition = url.LastIndexOf("/", StringComparison.Ordinal);
-                string commandName = String.Empty;
-                if (lastSlashPosition >= 0 && url.Length > 1)
+                else 
                 {
-                    commandName = url.Substring(lastSlashPosition + 1);
+                    this.logger.Info($"Operation cancelled.");
                 }
-                TrayCommandType? commandType = trayCommandHelper.GetCommandType(commandName);
-                if (!string.IsNullOrEmpty(commandName) && commandType == null)
-                {
-                    return;
-                }
-                commandType = commandType ?? DefaultCommand;
-                trayCommandHelper.RunCommand(commandType.Value);
             }
             catch (Exception e)
             {
@@ -104,6 +120,44 @@
             {
                 logger.Error("Error starting http service.", e);
             }
+        }
+
+        private bool ExistBlockingProcessRunning()
+        {
+            if (this.BlockingProcesses != null && this.BlockingProcesses.Any())
+            {
+                Process[] processes = Process.GetProcesses();
+
+                foreach (string process in this.BlockingProcesses)
+                {
+                    if (this.IsProcessRunning(processes, process))
+                    {
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                this.logger.Info($"No blocking processes configured.");
+            }
+
+            return false;
+        }
+
+        private bool IsProcessRunning(Process[] processes, string process)
+        {
+            if (string.IsNullOrWhiteSpace(process))
+            {
+                return false;
+            }
+
+            if (processes.Any(o => o.ProcessName.EndsWith(process)))
+            {
+                this.logger.Info($"Detected process running: '{process}'");
+                return true;
+            }
+
+            return false;
         }
     }
 }
