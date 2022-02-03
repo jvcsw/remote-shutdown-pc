@@ -8,22 +8,31 @@
     using log4net;
     using Microsoft.Win32;
 
-    public class ControllerApplicationContext: ApplicationContext
+    public class ApplicationController: ApplicationContext
     {
         private readonly ITrayCommandHelper trayCommandHelper;
         private readonly ILog logger;
         private readonly SettingsForm settingsForm;
         private readonly IHostService hostService;
-        private readonly NotifyIcon trayIcon;        
-        private readonly ToolStripMenuItem commandButton;
 
-        public ControllerApplicationContext(ITrayCommandHelper trayCommandHelper, SettingsForm settingsForm, IHostService hostHelper, ILog logger)
+        private NotifyIcon trayIcon;        
+        private ToolStripMenuItem commandButton;
+
+        public ApplicationController(ITrayCommandHelper trayCommandHelper, SettingsForm settingsForm, IHostService hostService, ILog logger)
         {
-            this.trayCommandHelper = trayCommandHelper;
-            this.settingsForm = settingsForm;
-            this.hostService = hostHelper;
-            this.logger = logger;
+            this.trayCommandHelper = trayCommandHelper ?? throw new ArgumentNullException(nameof(trayCommandHelper));
+            this.settingsForm = settingsForm ?? throw new ArgumentNullException(nameof(settingsForm));
+            this.hostService = hostService ?? throw new ArgumentNullException(nameof(hostService));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+            this.InitializeController();
+
+            System.Threading.Thread.Sleep(1000); // Delay for write traces in order
+            this.logger.Info("Application started.");
+        }
+
+        private void InitializeController()
+        {
             var notifyContextMenu = new ContextMenuStrip();
 
             this.commandButton = new ToolStripMenuItem(this.trayCommandHelper.GetText((TrayCommandType)Settings.Default.DefaultCommand))
@@ -133,7 +142,7 @@
             this.trayIcon.Visible = false;
             this.hostService.Stop();
 
-            this.logger.Info("Exiting application...");
+            this.logger.Info("Stopping application...");
 
             Application.Exit();
         }        

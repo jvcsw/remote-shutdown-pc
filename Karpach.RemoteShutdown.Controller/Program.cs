@@ -27,13 +27,13 @@ namespace Karpach.RemoteShutdown.Controller
             var builder = new ContainerBuilder();
             builder.RegisterInstance<ILog>(logger).SingleInstance();
             builder.RegisterType<TrayCommandHelper>().As<ITrayCommandHelper>().SingleInstance();
-            builder.RegisterType<ControllerApplicationContext>().AsSelf();
+            builder.RegisterType<ApplicationController>().AsSelf();
             builder.RegisterType<SettingsForm>().AsSelf();
             builder.RegisterType<HostService>().As<IHostService>();
             Container = builder.Build();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(Container.Resolve<ControllerApplicationContext>());
+            Application.Run(Container.Resolve<ApplicationController>());
         }
     }
 }

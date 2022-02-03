@@ -28,29 +28,62 @@
 
         public HostService(ITrayCommandHelper trayCommandHelper, ILog logger)
         {
-            this.trayCommandHelper = trayCommandHelper;
-            this.logger = logger;
+            this.trayCommandHelper = trayCommandHelper ?? throw new ArgumentNullException(nameof(trayCommandHelper));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            cancellationTokenSource = new CancellationTokenSource();
+            this.cancellationTokenSource = new CancellationTokenSource();
         }
 
         public async Task Start(int port)
         {
             await this.Stop();
 
-            cancellationTokenSource = new CancellationTokenSource();
+            this.cancellationTokenSource = new CancellationTokenSource();
 
-            hostTask = Task.Run(() => this.CreateHost(port), cancellationTokenSource.Token);
+            this.hostTask = Task.Run(() => this.CreateHost(port), this.cancellationTokenSource.Token);
         }
 
         public async Task Stop()
         {
-            if (hostTask != null)
+            if (this.hostTask != null)
             {
                 logger.Info("Stopping http service...");
 
-                cancellationTokenSource.Cancel();
-                await hostTask.ConfigureAwait(false);
+                this.cancellationTokenSource.Cancel();
+                await this.hostTask.ConfigureAwait(false);
+
+                this.logger.Info("Http service stopped.");
+            }
+        }
+
+        private void CreateHost(int port)
+        {
+            this.logger.Info("Starting http service...");
+
+            try
+            {
+                var host = new WebHostBuilder()
+                        .UseUrls($"http://+:{port}")
+                        .UseKestrel()
+                        .Configure(app =>
+                        {
+                            app.Run(async context =>
+                            {
+#pragma warning disable 4014
+                                this.ProcessRequestAsync(context.Request.Path.Value);
+#pragma warning restore 4014
+                                await context.Response.WriteAsync("Ok");
+                            });
+                        })
+                        .Build();
+
+                host.Run(this.cancellationTokenSource.Token);
+
+                this.logger.Info($"Http service started.");
+            }
+            catch (Exception e)
+            {
+                this.logger.Error("Error starting http service.", e);
             }
         }
 
@@ -73,54 +106,28 @@
                     {
                         commandName = url.Substring(lastSlashPosition + 1);
                     }
-                    TrayCommandType? commandType = trayCommandHelper.GetCommandType(commandName);
+                    TrayCommandType? commandType = this.trayCommandHelper.GetCommandType(commandName);
                     if (!string.IsNullOrEmpty(commandName) && commandType == null)
                     {
                         return;
                     }
 
-                    commandType = commandType ?? DefaultCommand;
+                    commandType = commandType ?? this.DefaultCommand;
 
-                    this.logger.Info($"Executing '{commandType}' operation...");
+                    this.logger.Info($"Executing '{commandType}' request...");
 
-                    trayCommandHelper.RunCommand(commandType.Value);
+                    this.trayCommandHelper.RunCommand(commandType.Value);
+
+                    this.logger.Info($"Request executed.");
                 }
                 else 
                 {
-                    this.logger.Info($"Operation cancelled.");
+                    this.logger.Info($"Request cancelled.");
                 }
             }
             catch (Exception e)
             {
-                logger.Error("Error processing http request.", e);
-            }
-        }
-
-        private void CreateHost(int port)
-        {
-            logger.Info("Starting http service...");
-
-            try
-            {
-                var host = new WebHostBuilder()
-                        .UseUrls($"http://+:{port}")
-                        .UseKestrel()
-                        .Configure(app =>
-                        {
-                            app.Run(async context =>
-                            {
-#pragma warning disable 4014
-                            ProcessRequestAsync(context.Request.Path.Value);
-#pragma warning restore 4014
-                            await context.Response.WriteAsync("Ok");
-                            });
-                        })
-                        .Build();
-                host.Run(cancellationTokenSource.Token);
-            }
-            catch (Exception e)
-            {
-                logger.Error("Error starting http service.", e);
+                this.logger.Error("Error on processing the request.", e);
             }
         }
 
@@ -128,6 +135,8 @@
         {
             if (this.BlockingProcesses != null && this.BlockingProcesses.Any())
             {
+                this.logger.Info($"Checking blocking processes...");
+
                 Process[] processes = Process.GetProcesses();
 
                 foreach (string process in this.BlockingProcesses)
@@ -137,6 +146,8 @@
                         return true;
                     }
                 }
+
+                this.logger.Info($"No blocking processes found.");
             }
             else
             {
@@ -155,7 +166,7 @@
 
             if (processes.Any(o => o.ProcessName.ToLower().Contains(process.ToLower())))
             {
-                this.logger.Info($"Detected process running: '{process}'");
+                this.logger.Info($"Detected a blocking process running: '{process}'");
                 return true;
             }
 
