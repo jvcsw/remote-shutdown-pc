@@ -11,6 +11,8 @@
 
         public bool AutoStart => chkAutoLoad.Checked;
 
+        public bool CheckBlockingProcesses => chkBlockingProcesses.Checked;
+
         public int Port => int.Parse(txtPort.Text);
 
         public string SecretCode => txtSecretCode.Text;
@@ -21,6 +23,7 @@
             this.txtSecretCode.Text = Settings.Default.SecretCode;
             this.txtPort.Text = Settings.Default.RemotePort.ToString();
             this.chkAutoLoad.Checked = Settings.Default.AutoStart;
+            this.chkBlockingProcesses.Checked = Settings.Default.CheckBlockingProcesses;
             this.cbxTrayCommand.DisplayMember = "Name";
             this.cbxTrayCommand.ValueMember = "CommandType";
             this.cbxTrayCommand.DataSource = trayCommandHelper.Commands;

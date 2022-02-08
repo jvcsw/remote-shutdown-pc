@@ -11,6 +11,8 @@
 
         string SecretCode { get; set; }
 
+        bool CheckBlockingProcesses { get; set; }
+
         IList<string> BlockingProcesses { get; set; }
 
         TrayCommandType DefaultCommand { get; set; }

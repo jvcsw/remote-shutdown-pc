@@ -24,6 +24,8 @@
 
         public IList<string> BlockingProcesses { get; set; }
 
+        public bool CheckBlockingProcesses { get; set; }
+
         public TrayCommandType DefaultCommand { get; set; }
 
         public HostService(ITrayCommandHelper trayCommandHelper, ILog logger)
@@ -93,36 +95,20 @@
             {
                 this.logger.Info($"Processing '{url}' request...");
 
-                if (!this.ExistBlockingProcessRunning())
+                if (this.CheckBlockingProcesses)
                 {
-                    await Task.Delay(1000).ConfigureAwait(false);
-                    if (!string.IsNullOrEmpty(SecretCode) && !url.StartsWith($"/{SecretCode}/"))
+                    if (!this.ExistBlockingProcessRunning())
                     {
-                        return;
+                        await this.ExecuteRequest(url);
                     }
-                    int lastSlashPosition = url.LastIndexOf("/", StringComparison.Ordinal);
-                    string commandName = String.Empty;
-                    if (lastSlashPosition >= 0 && url.Length > 1)
+                    else
                     {
-                        commandName = url.Substring(lastSlashPosition + 1);
+                        this.logger.Info($"Request cancelled.");
                     }
-                    TrayCommandType? commandType = this.trayCommandHelper.GetCommandType(commandName);
-                    if (!string.IsNullOrEmpty(commandName) && commandType == null)
-                    {
-                        return;
-                    }
-
-                    commandType = commandType ?? this.DefaultCommand;
-
-                    this.logger.Info($"Executing '{commandType}' request...");
-
-                    this.trayCommandHelper.RunCommand(commandType.Value);
-
-                    this.logger.Info($"Request executed.");
                 }
-                else 
+                else
                 {
-                    this.logger.Info($"Request cancelled.");
+                    await this.ExecuteRequest(url);
                 }
             }
             catch (Exception e)
@@ -171,6 +157,34 @@
             }
 
             return false;
+        }
+
+        private async Task ExecuteRequest(string url)
+        {
+            await Task.Delay(1000).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(SecretCode) && !url.StartsWith($"/{SecretCode}/"))
+            {
+                return;
+            }
+            int lastSlashPosition = url.LastIndexOf("/", StringComparison.Ordinal);
+            string commandName = String.Empty;
+            if (lastSlashPosition >= 0 && url.Length > 1)
+            {
+                commandName = url.Substring(lastSlashPosition + 1);
+            }
+            TrayCommandType? commandType = this.trayCommandHelper.GetCommandType(commandName);
+            if (!string.IsNullOrEmpty(commandName) && commandType == null)
+            {
+                return;
+            }
+
+            commandType = commandType ?? this.DefaultCommand;
+
+            this.logger.Info($"Executing '{commandType}' request...");
+
+            this.trayCommandHelper.RunCommand(commandType.Value);
+
+            this.logger.Info($"Request executed.");
         }
     }
 }

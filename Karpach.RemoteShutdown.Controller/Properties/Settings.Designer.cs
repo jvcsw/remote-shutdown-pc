@@ -73,13 +73,25 @@ namespace Karpach.RemoteShutdown.Controller.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("notepad")]
         public string BlockingProcesses {
             get {
                 return ((string)(this["BlockingProcesses"]));
             }
             set {
                 this["BlockingProcesses"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool CheckBlockingProcesses {
+            get {
+                return ((bool)(this["CheckBlockingProcesses"]));
+            }
+            set {
+                this["CheckBlockingProcesses"] = value;
             }
         }
     }

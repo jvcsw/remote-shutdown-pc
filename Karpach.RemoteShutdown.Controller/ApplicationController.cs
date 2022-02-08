@@ -27,7 +27,7 @@
 
             this.InitializeController();
 
-            System.Threading.Thread.Sleep(1000); // Delay for write traces in order
+            System.Threading.Thread.Sleep(100); // Delay for write traces in order
             this.logger.Info("Application started.");
         }
 
@@ -71,6 +71,7 @@
             };
 
             this.hostService.SecretCode = Settings.Default.SecretCode;
+            this.hostService.CheckBlockingProcesses = Settings.Default.CheckBlockingProcesses;
             this.hostService.BlockingProcesses = Settings.Default.BlockingProcesses.Split(';');
             this.hostService.DefaultCommand = (TrayCommandType)Settings.Default.DefaultCommand;
             this.hostService.Start(Settings.Default.RemotePort);
@@ -96,6 +97,7 @@
 
                 this.commandButton.Text = this.trayCommandHelper.GetText(this.settingsForm.CommandType);
                 Settings.Default.AutoStart = this.settingsForm.AutoStart;
+                Settings.Default.CheckBlockingProcesses = this.settingsForm.CheckBlockingProcesses;
                 Settings.Default.DefaultCommand = (int)this.settingsForm.CommandType;
                 Settings.Default.RemotePort = this.settingsForm.Port;
                 Settings.Default.SecretCode = this.settingsForm.SecretCode;                
